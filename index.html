@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>World Cup Edu-Penalty 2026 - eFootball 2027 Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&display=swap');
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Teko', sans-serif;
+            background-color: #030712;
+            touch-action: none;
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pointer-events-auto {
+            pointer-events: auto;
+        }
+
+        .efootball-tile {
+            background: linear-gradient(135deg, rgba(10, 25, 47, 0.92) 0%, rgba(20, 50, 110, 0.85) 100%);
+            border: 2px solid rgba(59, 130, 246, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), inset 0 0 15px rgba(59, 130, 246, 0.3);
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: white;
+            border-radius: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.2rem;
+            cursor: pointer;
+        }
+        .efootball-tile:hover {
+            border-color: #facc15;
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px rgba(234, 179, 8, 0.35), inset 0 0 20px rgba(234, 179, 8, 0.4);
+            background: linear-gradient(135deg, rgba(20, 30, 50, 0.95) 0%, rgba(30, 80, 180, 0.95) 100%);
+        }
+        .efootball-tile:active {
+            transform: scale(0.97);
+        }
+
+        .btn-modern {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            border: 2px solid #60a5fa;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: white;
+            text-shadow: 1px 1px 2px black;
+        }
+        .btn-modern:active { transform: scale(0.95); }
+        .btn-modern:hover { filter: brightness(1.2); }
+        
+        .btn-select {
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid #475569;
+            color: white;
+        }
+        .btn-select.selected {
+            border-color: #fbbf24;
+            background: rgba(180, 83, 9, 0.85);
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+        }
+
+        .glass-panel {
+            background: rgba(11, 19, 38, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 1rem;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.75);
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+        .screen.active {
+            display: flex;
+        }
+
+        .heart {
+            color: #ef4444;
+            text-shadow: 0 0 5px red;
+            font-size: 1.5rem;
+        }
+        .heart.lost {
+            color: #4b5563;
+            text-shadow: none;
+        }
+
+        .quiz-option {
+            background: linear-gradient(to right, #1e293b, #334155);
+            border: 1px solid #475569;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .quiz-option:hover { background: linear-gradient(to right, #334155, #475569); }
+        .quiz-option.correct { background: #15803d !important; border-color: #22c55e; }
+        .quiz-option.wrong { background: #b91c1c !important; border-color: #ef4444; }
+
+        #player-expression {
+            font-size: 4rem;
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            z-index: 20;
+            text-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        .global-controls {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+            pointer-events: auto;
+        }
+        .btn-icon {
+            background: rgba(31, 41, 55, 0.9);
+            border: 2px solid #4b5563;
+            color: white;
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+        }
+        .btn-icon:hover {
+            background: #3b82f6;
+            border-color: #60a5fa;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-canvas"></div>
+
+    <div class="ui-layer">
+        <audio id="bgm" src="https://assets.mixkit.co/music/preview/mixkit-energetic-upbeat-pop-dance-90.mp3" loop></audio> 
+        <audio id="anthem-audio" src="" preload="auto"></audio>
+        <audio id="sfx-click" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
+        <audio id="sfx-kick" src="https://assets.mixkit.co/active_storage/sfx/2111/2111-preview.mp3"></audio>
+        <audio id="sfx-cheer" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+        <audio id="sfx-post" src="https://assets.mixkit.co/active_storage/sfx/2771/2771-preview.mp3"></audio>
+        <audio id="sfx-catch" src="https://assets.mixkit.co/active_storage/sfx/2736/2736-preview.mp3"></audio>
+        <audio id="sfx-sad" src="https://assets.mixkit.co/active_storage/sfx/2955/2955-preview.mp3"></audio>
+        <audio id="sfx-goal" src="https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3"></audio>
+        <audio id="sfx-whistle" src="https://assets.mixkit.co/active_storage/sfx/2974/2974-preview.mp3"></audio>
+
+        <div id="intro-overlay" class="absolute top-0 left-0 w-full h-full z-[150] flex flex-col justify-between p-6 pointer-events-auto transition-opacity duration-700 overflow-hidden" style="background: linear-gradient(rgba(3, 7, 18, 0.88), rgba(3, 7, 18, 0.96)), url('https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1600&auto=format&fit=crop') center/cover no-repeat;">
+            <div class="flex justify-center w-full max-w-5xl mx-auto items-center z-10 pt-4">
+                <div class="flex items-center gap-2 bg-blue-600/20 px-6 py-2 rounded-full border border-blue-400/40 backdrop-blur">
+                    <span class="text-blue-400 font-bold text-sm tracking-widest">⚽ WORLD CUP 2026 & eFOOTBALL 2027</span>
+                </div>
+            </div>
+
+            <div class="relative flex flex-col items-center text-center my-auto z-10">
+                <div class="mb-4 inline-block bg-yellow-500/20 border border-yellow-400/40 px-6 py-1 rounded-full text-yellow-300 tracking-widest text-sm uppercase">
+                    Edukasi Siswa Kelas 5 SD
+                </div>
+                <h1 class="text-5xl md:text-7xl text-yellow-400 font-bold mb-4 tracking-wide drop-shadow-[0_10px_10px_rgba(0,0,0,0.8)]">WORLD CUP 2026<br>& CHAMPIONS</h1>
+                <p class="text-gray-200 text-xl md:text-2xl mb-8 max-w-xl drop-shadow">Simulasi Penalti, Free Kick & Klub Elite Multi-Liga Dunia!</p>
+                
+                <button onclick="uiManager.startIntro()" class="btn-modern px-12 py-5 text-3xl rounded-2xl animate-pulse shadow-2xl flex items-center gap-3">
+                    <span>⚡ KETUK UNTUK MASUK</span>
+                </button>
+            </div>
+
+            <div class="text-center text-gray-400 text-sm tracking-wide mb-2 z-10">
+                Pilih Bintangmu, Jawab Kuisnya, Jadilah Juara Dunia!
+            </div>
+        </div>
+
+        <div id="global-controls" class="global-controls hidden">
+            <button onclick="uiManager.goToMenu()" class="btn-icon" title="Kembali ke Beranda">🏠</button>
+            <button onclick="commentatorManager.cycleLang()" id="btn-lang" class="btn-icon text-sm font-bold" title="Ubah Bahasa Komentator">ID</button>
+            <button onclick="audioManager.toggleMute()" id="btn-mute" class="btn-icon" title="Nyalakan/Matikan Audio">🔊</button>
+        </div>
+        
+        <div id="screen-menu" class="screen flex-col items-center justify-center p-4">
+            <div class="glass-panel p-6 text-center w-full max-w-lg pointer-events-auto">
+                <div class="flex items-center justify-between mb-4 border-b border-blue-500/30 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">🎮</span>
+                        <h2 class="text-2xl text-yellow-400 font-bold tracking-wider">eFOOTBALL MENU</h2>
+                    </div>
+                    <span class="text-xs bg-blue-600/50 px-3 py-1 rounded-full text-blue-200">EDISI 2027</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <button onclick="uiManager.selectTournament('worldcup')" class="efootball-tile">
+                        <span class="text-3xl mb-1">🏆</span>
+                        <span class="text-lg font-bold">World Cup 2026</span>
+                        <span class="text-xs text-gray-400 mt-1">Turnamen Negara</span>
+                    </button>
+                    <button onclick="uiManager.selectTournament('champions')" class="efootball-tile !border-yellow-400">
+                        <span class="text-3xl mb-1">⭐</span>
+                        <span class="text-lg font-bold text-yellow-300">Champions League</span>
+                        <span class="text-xs text-gray-400 mt-1">Klub Multi-Liga & Stadion</span>
+                    </button>
+                    <button onclick="uiManager.selectTournament('masterleague')" class="efootball-tile">
+                        <span class="text-3xl mb-1">👔</span>
+                        <span class="text-lg font-bold">Master League</span>
+                        <span class="text-xs text-gray-400 mt-1">Karier Skuad</span>
+                    </button>
+                    <button onclick="uiManager.selectTournament('exhibition')" class="efootball-tile">
+                        <span class="text-3xl mb-1">⚡</span>
+                        <span class="text-lg font-bold">Exhibition Match</span>
+                        <span class="text-xs text-gray-400 mt-1">Penalti / Build-Up</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="uiManager.showInstructions()" class="btn-modern py-2.5 rounded-lg text-sm bg-gray-700">Cara Bermain</button>
+                    <button onclick="uiManager.showSettings()" class="btn-modern py-2.5 rounded-lg text-sm bg-blue-800 border-blue-400">Pengaturan</button>
+                    <button onclick="uiManager.exitGame()" class="btn-modern py-2.5 rounded-lg text-sm !bg-red-900 border-red-500">Keluar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-exit" class="screen flex-col items-center justify-center p-4 bg-black/95 pointer-events-auto z-50">
+            <div class="glass-panel p-8 text-center w-full max-w-md">
+                <h2 class="text-4xl text-yellow-400 font-bold mb-4">Terima Kasih!</h2>
+                <div class="text-6xl mb-6">⚽👋</div>
+                <p class="text-xl text-white mb-8">Sampai jumpa di pertandingan selanjutnya!</p>
+                <button onclick="location.reload()" class="btn-modern px-8 py-3 rounded-xl text-xl w-full">Kembali ke Awal</button>
+            </div>
+        </div>
+
+        <div id="modal-instructions" class="hidden absolute top-0 left-0 w-full h-full bg-black/80 flex items-center justify-center p-4 z-50 pointer-events-auto">
+            <div class="glass-panel p-6 w-full max-w-md text-white">
+                <h2 class="text-3xl font-bold text-yellow-400 mb-4">Cara Bermain</h2>
+                <ul class="list-disc pl-5 space-y-2 text-lg">
+                    <li>Pilih klub favorit dari seluruh liga top dunia dengan logo crest resmi asli!</li>
+                    <li>Jawab pertanyaan kuis kelas 5 SD seputar sejarah & teknik bola dengan benar untuk mencetak gol.</li>
+                </ul>
+                <button onclick="uiManager.hideInstructions()" class="btn-modern w-full py-2 mt-6 rounded-lg text-xl">Tutup</button>
+            </div>
+        </div>
+
+        <div id="modal-settings" class="hidden absolute top-0 left-0 w-full h-full bg-black/90 flex items-center justify-center p-4 z-50 pointer-events-auto">
+            <div class="glass-panel p-6 w-full max-w-md text-white">
+                <h2 class="text-3xl font-bold text-yellow-400 mb-6">Pengaturan Permainan</h2>
+                
+                <div class="mb-4">
+                    <label class="block text-gray-300 mb-2 font-bold text-xl">Lagu Piala Dunia (BGM)</label>
+                    <select id="bgm-select" onchange="audioManager.changeBGM(this.value)" class="w-full p-3 bg-slate-800 border border-gray-600 rounded-lg text-white text-lg outline-none focus:border-yellow-400">
+                        <option value="0">Arhbo (Qatar 2022)</option>
+                        <option value="1">Waka Waka (Afrika 2010)</option>
+                        <option value="2">Hayya Hayya (Qatar 2022)</option>
+                        <option value="3">Dreamers (Qatar 2022)</option>
+                    </select>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-gray-300 mb-2 font-bold text-xl">Bahasa Komentator</label>
+                    <select id="commentator-select" onchange="commentatorManager.setLang(this.value)" class="w-full p-3 bg-slate-800 border border-gray-600 rounded-lg text-white text-lg outline-none focus:border-yellow-400">
+                        <option value="id-ID">Bahasa Indonesia</option>
+                        <option value="en-US">Bahasa Inggris (English)</option>
+                        <option value="es-ES">Bahasa Spanyol (Español)</option>
+                        <option value="ar-SA">Bahasa Arab (العربية)</option>
+                    </select>
+                </div>
+
+                <button onclick="uiManager.hideSettings()" class="btn-modern w-full py-3 rounded-lg text-xl">Simpan & Tutup</button>
+            </div>
+        </div>
+
+        <div id="screen-mode" class="screen flex-col items-center justify-start pt-10 p-4">
+            <div class="glass-panel p-6 text-center w-full max-w-md pointer-events-auto">
+                <h2 class="text-4xl text-white font-bold mb-4">Pilih Mode Pertandingan</h2>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <button id="btn-mode-penalty" onclick="gameData.setMatchType('penalty')" class="btn-select rounded-xl p-3 flex flex-col items-center selected">
+                        <span class="text-3xl mb-1">⚽</span>
+                        <span class="text-sm font-bold">Penalti</span>
+                    </button>
+                    <button id="btn-mode-freekick" onclick="gameData.setMatchType('freekick')" class="btn-select rounded-xl p-3 flex flex-col items-center">
+                        <span class="text-3xl mb-1">🛡️</span>
+                        <span class="text-sm font-bold">Free Kick</span>
+                    </button>
+                    <button id="btn-mode-buildup" onclick="gameData.setMatchType('buildup')" class="btn-select rounded-xl p-3 flex flex-col items-center">
+                        <span class="text-3xl mb-1">⚡⚽</span>
+                        <span class="text-sm font-bold">Build-Up</span>
+                    </button>
+                </div>
+
+                <div class="border-t border-gray-700 pt-3 mb-3">
+                    <label class="block text-gray-300 text-sm mb-2 font-bold">Mode Pemain</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="btn-mode-solo" onclick="gameData.setMode('solo')" class="btn-select rounded-lg p-3 text-sm selected">👤 SOLO</button>
+                        <button id="btn-mode-duel" onclick="gameData.setMode('duel')" class="btn-select rounded-lg p-3 text-sm">⚔️ DUEL HP</button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-2">
+                    <button onclick="uiManager.goToMenu()" class="btn-modern px-6 py-2 rounded-lg bg-gray-600">Beranda</button>
+                    <button onclick="uiManager.goToSeasonSelect()" class="btn-modern px-6 py-2 rounded-lg text-yellow-300">Lanjut ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-season" class="screen flex-col items-center justify-start pt-6 p-4 pointer-events-auto">
+            <div class="glass-panel p-6 text-center w-full max-w-lg">
+                <div class="flex items-center justify-center gap-2 mb-2">
+                    <span class="text-2xl">🏟️</span>
+                    <h2 class="text-3xl text-yellow-400 font-bold">ATMOSFER STADION</h2>
+                </div>
+                <p class="text-gray-300 text-sm mb-4">Pilih kondisi cuaca dan musim stadion:</p>
+                
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <button id="btn-season-fine" onclick="gameData.setSeason('fine')" class="season-card btn-select rounded-xl p-4 flex flex-col items-center selected">
+                        <span class="text-4xl mb-1">☀️</span>
+                        <span class="text-lg font-bold">Fine (Cerah)</span>
+                    </button>
+                    <button id="btn-season-night" onclick="gameData.setSeason('night')" class="season-card btn-select rounded-xl p-4 flex flex-col items-center">
+                        <span class="text-4xl mb-1">🌙</span>
+                        <span class="text-lg font-bold">Night (Malam Lampu)</span>
+                    </button>
+                    <button id="btn-season-rain" onclick="gameData.setSeason('rain')" class="season-card btn-select rounded-xl p-4 flex flex-col items-center">
+                        <span class="text-4xl mb-1">🌧️</span>
+                        <span class="text-lg font-bold">Rain (Hujan Basah)</span>
+                    </button>
+                    <button id="btn-season-snow" onclick="gameData.setSeason('snow')" class="season-card btn-select rounded-xl p-4 flex flex-col items-center">
+                        <span class="text-4xl mb-1">❄️</span>
+                        <span class="text-lg font-bold">Snow (Salju)</span>
+                    </button>
+                </div>
+                <div class="flex justify-between mt-2">
+                    <button onclick="uiManager.goToModeSelect()" class="btn-modern px-6 py-2 rounded-lg bg-gray-600">Kembali</button>
+                    <button onclick="uiManager.goToStadiumSelect()" class="btn-modern px-6 py-2 rounded-lg text-yellow-300">Lanjut ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-stadium" class="screen flex-col items-center justify-start pt-6 p-2 overflow-y-auto pointer-events-auto">
+            <div class="glass-panel p-4 text-center w-full max-w-lg mb-20">
+                <h2 id="stadium-screen-title" class="text-3xl text-white font-bold mb-2">Stadion Resmi</h2>
+                <p id="stadium-screen-subtitle" class="text-yellow-400 text-sm mb-4">Pilih Venue Pertandingan</p>
+                <div id="stadium-grid" class="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto pr-1"></div>
+                <div class="mt-4 p-3 bg-slate-800 rounded-lg text-left">
+                    <p class="text-gray-400 text-sm">Stadion Terpilih:</p>
+                    <p id="selected-stadium-name" class="text-lg text-yellow-400 font-bold">-</p>
+                </div>
+                <div class="flex justify-between mt-6">
+                    <button onclick="uiManager.goToSeasonSelect()" class="btn-modern px-6 py-2 rounded-lg bg-gray-600">Kembali</button>
+                    <button onclick="uiManager.goToTeamSelect()" class="btn-modern px-6 py-2 rounded-lg text-yellow-300">Lanjut ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-team" class="screen flex-col items-center justify-start pt-6 p-2 overflow-y-auto pointer-events-auto">
+            <div class="glass-panel p-4 text-center w-full max-w-lg mb-20">
+                <h2 id="team-select-title" class="text-3xl text-white font-bold mb-2">Pilih Klub Dunia</h2>
+                <div class="flex gap-1 justify-center mb-4 overflow-x-auto pb-2">
+                    <button onclick="uiManager.filterTeams('all')" class="btn-modern px-2 py-1 rounded text-xs bg-blue-700">Semua</button>
+                    <button onclick="uiManager.filterTeams('england')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inggris</button>
+                    <button onclick="uiManager.filterTeams('spain')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🇪🇸 Spanyol</button>
+                    <button onclick="uiManager.filterTeams('france')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🇫🇷 Prancis</button>
+                    <button onclick="uiManager.filterTeams('portugal')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🇵🇹 Portugal</button>
+                    <button onclick="uiManager.filterTeams('netherlands')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🇳🇱 Belanda</button>
+                    <button onclick="uiManager.filterTeams('turkey')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🇹🇷 Turki</button>
+                    <button onclick="uiManager.filterTeams('saudi')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🇸🇦 Arab</button>
+                    <button onclick="uiManager.filterTeams('indonesia')" class="btn-modern px-2 py-1 rounded text-xs bg-slate-800">🇮🇩 Indonesia</button>
+                </div>
+                <div id="team-grid" class="grid grid-cols-2 gap-3 max-h-[340px] overflow-y-auto pr-1"></div>
+                <div class="flex justify-between mt-6">
+                    <button onclick="uiManager.goToStadiumSelect()" class="btn-modern px-6 py-2 rounded-lg bg-gray-600">Kembali</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-squad" class="screen flex-col items-center justify-start pt-6 p-2 overflow-y-auto pointer-events-auto">
+            <div class="glass-panel p-4 text-center w-full max-w-lg mb-20">
+                <h2 id="squad-select-title" class="text-3xl text-white font-bold mb-2">Pilih Pemain Skuad</h2>
+                <p id="squad-team-label" class="text-yellow-400 font-bold text-xl mb-4">-</p>
+                
+                <div id="squad-grid" class="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-1"></div>
+
+                <div class="mt-4 p-3 bg-slate-800 rounded-lg text-left">
+                    <p class="text-gray-400 text-sm">Pemain Terpilih:</p>
+                    <p id="selected-player-name" class="text-xl text-yellow-400 font-bold">-</p>
+                </div>
+
+                <div class="flex justify-between mt-6">
+                    <button onclick="uiManager.goToTeamSelect()" class="btn-modern px-6 py-2 rounded-lg bg-gray-600">Ganti Klub</button>
+                    <button onclick="uiManager.confirmTeamSelection()" class="btn-modern px-6 py-2 rounded-lg text-yellow-300">Konfirmasi ➔</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-game" class="screen flex-col justify-between p-4 pointer-events-none">
+            <div id="hud-top-bar" class="flex justify-between items-start w-full transition-opacity duration-1000">
+                <div class="glass-panel p-2 px-4 flex flex-col items-start min-w-[120px]">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <img id="hud-p1-flag" src="" alt="logo" class="w-6 h-6 rounded-full object-contain bg-white p-0.5 shadow">
+                        <span id="hud-p1-name" class="text-white font-bold text-xl leading-none">Player 1</span>
+                    </div>
+                    <span id="hud-p1-score" class="text-yellow-400 font-bold text-2xl">Skor: 0</span>
+                    <div id="hud-p1-lives" class="flex space-x-1 mt-1">
+                        <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
+                    </div>
+                </div>
+
+                <div id="match-type-badge" class="glass-panel px-4 py-1 text-center">
+                    <span class="text-yellow-400 text-sm font-bold uppercase" id="badge-mode-text">PENALTI</span>
+                </div>
+
+                <div id="hud-p2-container" class="glass-panel p-2 px-4 flex flex-col items-end min-w-[120px] hidden">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span id="hud-p2-name" class="text-white font-bold text-xl leading-none">Player 2</span>
+                        <img id="hud-p2-flag" src="" alt="logo" class="w-6 h-6 rounded-full object-contain bg-white p-0.5 shadow">
+                    </div>
+                    <span id="hud-p2-score" class="text-yellow-400 font-bold text-2xl">Skor: 0</span>
+                    <div id="hud-p2-lives" class="flex space-x-1 mt-1">
+                        <span class="heart">❤</span><span class="heart">❤</span><span class="heart">❤</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="player-expression">🤩🏆</div>
+
+            <div id="cinematic-goal-text" class="absolute top-[40%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-7xl md:text-[9rem] italic font-bold text-transparent bg-clip-text opacity-0 pointer-events-none z-[200] hidden whitespace-nowrap" style="background-image: linear-gradient(to bottom, #fde047, #b45309); -webkit-text-stroke: 3px #451a03; filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.9));">
+                G O A L !
+            </div>
+
+            <div id="quiz-panel" class="glass-panel p-4 mb-4 w-full max-w-lg mx-auto pointer-events-auto transform transition-transform duration-500 translate-y-full">
+                <div class="flex justify-between text-gray-300 mb-2 border-b border-gray-600 pb-2">
+                    <span id="quiz-number">Soal 1/10</span>
+                    <span id="active-player-indicator" class="text-yellow-400 font-bold">Giliran: Player 1</span>
+                    <span id="quiz-category" class="text-blue-400">Sejarah</span>
+                </div>
+                <h3 id="quiz-question" class="text-white text-xl md:text-2xl font-bold mb-4 leading-tight"></h3>
+                <div id="quiz-options" class="flex flex-col space-y-2"></div>
+            </div>
+
+            <div id="shot-style-panel" class="glass-panel p-4 mb-4 w-full max-w-md mx-auto pointer-events-auto hidden text-center">
+                <h3 class="text-2xl text-yellow-400 font-bold mb-2">Pilih Variasi Tendangan!</h3>
+                <p class="text-gray-300 text-sm mb-4">Jawaban benar! Pilih teknik eksekusi andalanmu:</p>
+                <div id="shot-options-container" class="grid grid-cols-3 gap-2"></div>
+            </div>
+        </div>
+
+        <div id="cinematic-flash" class="absolute top-0 left-0 w-full h-full bg-white opacity-0 pointer-events-none z-[190] hidden"></div>
+
+        <div id="screen-gameover" class="screen flex-col items-center justify-center p-4 bg-black/90 pointer-events-auto">
+            <div class="glass-panel p-8 text-center w-full max-w-md">
+                <h2 id="gameover-title" class="text-5xl text-white font-bold mb-2">PERTANDINGAN USAI</h2>
+                <div id="gameover-emoji" class="text-6xl mb-4">🏆</div>
+                <p id="gameover-message" class="text-xl text-gray-300 mb-6">Pemenang Ditetapkan!</p>
+                
+                <div class="bg-slate-800 p-4 rounded-xl mb-8">
+                    <p id="gameover-score" class="text-2xl text-yellow-400 font-bold">Skor P1: 0 | Skor P2: 0</p>
+                </div>
+
+                <button onclick="uiManager.resetToMenu()" class="btn-modern w-full py-4 text-2xl rounded-xl">Main Lagi</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const gameData = {
+            mode: 'solo',
+            matchType: 'penalty',
+            season: 'fine',
+            selectedStadium: null,
+            currentPlayerTurn: 1,
+            selectedTeamId: null,
+            selectedPlayerObj: null,
+            currentQuizObj: null,
+            tournamentType: 'champions',
+            
+            stadiumsChampions: [
+                { id: 'ucl1', name: 'Santiago Bernabéu', country: 'Spanyol (Real Madrid)', flag: 'es' },
+                { id: 'ucl2', name: 'Camp Nou', country: 'Spanyol (FC Barcelona)', flag: 'es' },
+                { id: 'ucl3', name: 'Anfield', country: 'Inggris (Liverpool)', flag: 'gb-eng' },
+                { id: 'ucl4', name: 'Allianz Arena', country: 'Jerman (Bayern München)', flag: 'de' },
+                { id: 'ucl5', name: 'Parc des Princes', country: 'Prancis (PSG)', flag: 'fr' },
+                { id: 'ucl6', name: 'Signal Iduna Park', country: 'Jerman (Dortmund)', flag: 'de' },
+                { id: 'ucl7', name: 'San Siro', country: 'Italia (Milan / Inter)', flag: 'it' },
+                { id: 'ucl8', name: 'Johan Cruijff ArenA', country: 'Belanda (Ajax)', flag: 'nl' },
+                { id: 'ucl9', name: 'Estádio da Luz', country: 'Portugal (Benfica)', flag: 'pt' },
+                { id: 'ucl10', name: 'Wembley Stadium', country: 'Inggris (Home of Finals)', flag: 'gb-eng' }
+            ],
+
+            stadiumsWorldCup: [
+                { id: 'metlife', name: 'MetLife Stadium (Final WC 2026)', country: 'Amerika Serikat', flag: 'us' },
+                { id: 'azteca', name: 'Estadio Azteca', country: 'Meksiko', flag: 'mx' },
+                { id: 'sofi', name: 'SoFi Stadium', country: 'Amerika Serikat', flag: 'us' }
+            ],
+
+            teamsData: {
+                // ---------------- LIGA INGGRIS ----------------
+                mancity: { name: 'Manchester City', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t43.png', color: 0x60a5fa, squad: [{ name: 'Erling Haaland', number: 9, pos: 'ST', rating: 94 }, { name: 'Kevin De Bruyne', number: 17, pos: 'AM', rating: 92 }] },
+                arsenal: { name: 'Arsenal', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t3.png', color: 0xef4444, squad: [{ name: 'Bukayo Saka', number: 7, pos: 'RW', rating: 90 }, { name: 'Martin Odegaard', number: 8, pos: 'AM', rating: 89 }] },
+                liverpool: { name: 'Liverpool', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t14.png', color: 0xdc2626, squad: [{ name: 'Mohamed Salah', number: 11, pos: 'RW', rating: 90 }, { name: 'Virgil van Dijk', number: 4, pos: 'CB', rating: 90 }] },
+                manutd: { name: 'Manchester United', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t1.png', color: 0xb91c1c, squad: [{ name: 'Bruno Fernandes', number: 8, pos: 'AM', rating: 88 }, { name: 'Marcus Rashford', number: 10, pos: 'LW', rating: 85 }] },
+                chelsea: { name: 'Chelsea', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t8.png', color: 0x1d4ed8, squad: [{ name: 'Cole Palmer', number: 20, pos: 'AM', rating: 89 }] },
+                tottenham: { name: 'Tottenham Hotspur', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t6.png', color: 0xffffff, squad: [{ name: 'Son Heung-min', number: 7, pos: 'LW', rating: 88 }] },
+                astonvilla: { name: 'Aston Villa', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t7.png', color: 0x86efac, squad: [{ name: 'Ollie Watkins', number: 11, pos: 'ST', rating: 85 }] },
+                newcastle: { name: 'Newcastle United', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t4.png', color: 0x000000, squad: [{ name: 'Alexander Isak', number: 14, pos: 'ST', rating: 86 }] },
+                brighton: { name: 'Brighton', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t36.png', color: 0x3b82f6, squad: [{ name: 'Kaoru Mitoma', number: 22, pos: 'LW', rating: 83 }] },
+                westham: { name: 'West Ham United', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t21.png', color: 0x7c2d12, squad: [{ name: 'Jarrod Bowen', number: 20, pos: 'RW', rating: 83 }] },
+                crystalpalace: { name: 'Crystal Palace', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t31.png', color: 0x1e3a8a, squad: [{ name: 'Eberechi Eze', number: 10, pos: 'AM', rating: 83 }] },
+                everton: { name: 'Everton', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t11.png', color: 0x1d4ed8, squad: [{ name: 'Dominic Calvert-Lewin', number: 9, pos: 'ST', rating: 80 }] },
+                fulham: { name: 'Fulham', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t54.png', color: 0xffffff, squad: [{ name: 'Emile Smith Rowe', number: 32, pos: 'AM', rating: 80 }] },
+                brentford: { name: 'Brentford', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t94.png', color: 0xdc2626, squad: [{ name: 'Ivan Toney', number: 17, pos: 'ST', rating: 83 }] },
+                bournemouth: { name: 'Bournemouth', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t91.png', color: 0x990000, squad: [{ name: 'Dominic Solanke', number: 9, pos: 'ST', rating: 82 }] },
+                wolves: { name: 'Wolverhampton', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t39.png', color: 0xf59e0b, squad: [{ name: 'Matheus Cunha', number: 10, pos: 'ST', rating: 81 }] },
+                nottingham: { name: 'Nottingham Forest', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t17.png', color: 0xdc2626, squad: [{ name: 'Morgan Gibbs-White', number: 10, pos: 'AM', rating: 81 }] },
+                leicester: { name: 'Leicester City', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t13.png', color: 0x1d4ed8, squad: [{ name: 'Jamie Vardy', number: 9, pos: 'ST', rating: 79 }] },
+                southampton: { name: 'Southampton', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t20.png', color: 0xdc2626, squad: [{ name: 'Adam Lallana', number: 20, pos: 'CM', rating: 77 }] },
+                ipswich: { name: 'Ipswich Town', league: 'england', logo: 'https://resources.premierleague.com/premierleague/badges/70/t40.png', color: 0x1e3a8a, squad: [{ name: 'Liam Delap', number: 19, pos: 'ST', rating: 76 }] },
+
+                // ---------------- LIGA SPANYOL (20 KLUB DENGAN LOGO RESMI LA LIGA CREST) ----------------
+                realmadrid: { name: 'Real Madrid', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/rmd.png', color: 0xffffff, squad: [{ name: 'Kylian Mbappe', number: 9, pos: 'ST', rating: 93 }, { name: 'Jude Bellingham', number: 5, pos: 'AM', rating: 91 }, { name: 'Vinicius Jr', number: 7, pos: 'LW', rating: 92 }] },
+                barcelona: { name: 'FC Barcelona', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/bar.png', color: 0x990000, squad: [{ name: 'Lamine Yamal', number: 19, pos: 'RW', rating: 88 }, { name: 'Robert Lewandowski', number: 9, pos: 'ST', rating: 89 }, { name: 'Pedri', number: 8, pos: 'CM', rating: 87 }] },
+                atletico: { name: 'Atletico Madrid', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/atm.png', color: 0xdc2626, squad: [{ name: 'Antoine Griezmann', number: 7, pos: 'ST', rating: 88 }, { name: 'Julian Alvarez', number: 19, pos: 'ST', rating: 86 }] },
+                girona: { name: 'Girona FC', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/gir.png', color: 0xdc2626, squad: [{ name: 'Viktor Tsygankov', number: 8, pos: 'RW', rating: 82 }] },
+                athletic: { name: 'Athletic Bilbao', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/ath.png', color: 0xdc2626, squad: [{ name: 'Nico Williams', number: 11, pos: 'LW', rating: 85 }] },
+                realsociedad: { name: 'Real Sociedad', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/rso.png', color: 0x1d4ed8, squad: [{ name: 'Takefusa Kubo', number: 14, pos: 'RW', rating: 83 }] },
+                villarreal: { name: 'Villarreal CF', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/vil.png', color: 0xfacc15, squad: [{ name: 'Gerard Moreno', number: 7, pos: 'ST', rating: 82 }] },
+                betis: { name: 'Real Betis', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/bet.png', color: 0x15803d, squad: [{ name: 'Isco', number: 22, pos: 'AM', rating: 82 }] },
+                sevilla: { name: 'Sevilla FC', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/sev.png', color: 0xffffff, squad: [{ name: 'Dodi Lukebakio', number: 11, pos: 'RW', rating: 79 }] },
+                valencia: { name: 'Valencia CF', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/val.png', color: 0xffffff, squad: [{ name: 'Jose Luis Gaya', number: 14, pos: 'LB', rating: 80 }] },
+                osasuna: { name: 'CA Osasuna', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/osa.png', color: 0xdc2626, squad: [{ name: 'Ante Budimir', number: 17, pos: 'ST', rating: 79 }] },
+                celta: { name: 'Celta Vigo', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/cel.png', color: 0x38bdf8, squad: [{ name: 'Iago Aspas', number: 10, pos: 'ST', rating: 80 }] },
+                mallorca: { name: 'RCD Mallorca', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/mal.png', color: 0xdc2626, squad: [{ name: 'Vedat Muriqi', number: 7, pos: 'ST', rating: 78 }] },
+                rayo: { name: 'Rayo Vallecano', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/ray.png', color: 0xffffff, squad: [{ name: 'Isi Palazon', number: 7, pos: 'RW', rating: 78 }] },
+                getafe: { name: 'Getafe CF', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/get.png', color: 0x1d4ed8, squad: [{ name: 'Borja Mayoral', number: 19, pos: 'ST', rating: 79 }] },
+                alaves: { name: 'Deportivo Alavés', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/ala.png', color: 0x1d4ed8, squad: [{ name: 'Kike Garcia', number: 9, pos: 'ST', rating: 76 }] },
+                laspalmas: { name: 'UD Las Palmas', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/lpa.png', color: 0xfacc15, squad: [{ name: 'Kirian Rodriguez', number: 20, pos: 'CM', rating: 78 }] },
+                valladolid: { name: 'Real Valladolid', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/rvl.png', color: 0x990000, squad: [{ name: 'Anuar Tuhami', number: 23, pos: 'CM', rating: 75 }] },
+                leganes: { name: 'CD Leganés', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/leg.png', color: 0x1d4ed8, squad: [{ name: 'Juan Cruz', number: 11, pos: 'RW', rating: 75 }] },
+                espanyol: { name: 'RCD Espanyol', league: 'spain', logo: 'https://assets.laliga.com/assets/logos/clubs/v/esp.png', color: 0x1d4ed8, squad: [{ name: 'Javi Puado', number: 7, pos: 'LW', rating: 77 }] },
+
+                // ---------------- LIGA PRANCIS ----------------
+                psg: { name: 'Paris Saint-Germain', league: 'france', logo: 'https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg', color: 0x1e3a8a, squad: [{ name: 'Ousmane Dembele', number: 10, pos: 'RW', rating: 86 }, { name: 'Vitinha', number: 17, pos: 'CM', rating: 85 }] },
+                marseille: { name: 'Olympique de Marseille', league: 'france', logo: 'https://upload.wikimedia.org/wikipedia/en/d/d8/Olympique_Marseille_logo.svg', color: 0x3b82f6, squad: [{ name: 'Mason Greenwood', number: 10, pos: 'RW', rating: 83 }] },
+                monaco: { name: 'AS Monaco', league: 'france', logo: 'https://upload.wikimedia.org/wikipedia/en/b/ba/AS_Monaco_FC.svg', color: 0xdc2626, squad: [{ name: 'Takumi Minamino', number: 18, pos: 'AM', rating: 81 }] },
+
+                // ---------------- LIGA PORTUGAL ----------------
+                benfica: { name: 'SL Benfica', league: 'portugal', logo: 'https://upload.wikimedia.org/wikipedia/en/a/a2/SL_Benfica_logo.svg', color: 0xdc2626, squad: [{ name: 'Angel Di Maria', number: 11, pos: 'RW', rating: 83 }] },
+                sporting: { name: 'Sporting CP', league: 'portugal', logo: 'https://upload.wikimedia.org/wikipedia/en/e/e1/Sporting_CP_Logo.svg', color: 0x15803d, squad: [{ name: 'Viktor Gyokeres', number: 9, pos: 'ST', rating: 88 }] },
+
+                // ---------------- LIGA BELANDA ----------------
+                ajax: { name: 'Ajax Amsterdam', league: 'netherlands', logo: 'https://upload.wikimedia.org/wikipedia/en/7/79/Logo_AFC_Ajax.svg', color: 0xdc2626, squad: [{ name: 'Jordan Henderson', number: 6, pos: 'CM', rating: 80 }] },
+                psv: { name: 'PSV Eindhoven', league: 'netherlands', logo: 'https://upload.wikimedia.org/wikipedia/en/0/05/PSV_Eindhoven_%28logo%29.svg', color: 0xdc2626, squad: [{ name: 'Luuk de Jong', number: 9, pos: 'ST', rating: 82 }] },
+
+                // ---------------- LIGA TURKI ----------------
+                galatasaray: { name: 'Galatasaray', league: 'turkey', logo: 'https://upload.wikimedia.org/wikipedia/en/3/3d/Galatasaray_SK_Logo.svg', color: 0xf59e0b, squad: [{ name: 'Victor Osimhen', number: 45, pos: 'ST', rating: 88 }] },
+                fenerbahce: { name: 'Fenerbahçe', league: 'turkey', logo: 'https://upload.wikimedia.org/wikipedia/en/6/62/Fenerbah%C3%A7e_SK.svg', color: 0x1e3a8a, squad: [{ name: 'Edin Dzeko', number: 9, pos: 'ST', rating: 83 }] },
+
+                // ---------------- LIGA ARAB SAUDI ----------------
+                althalal: { name: 'Al Hilal', league: 'saudi', logo: 'https://upload.wikimedia.org/wikipedia/en/1/1d/Al-Hilal_Saudi_FC_logo.svg', color: 0x1d4ed8, squad: [{ name: 'Neymar Jr', number: 10, pos: 'LW', rating: 88 }] },
+                alnassr: { name: 'Al Nassr', league: 'saudi', logo: 'https://upload.wikimedia.org/wikipedia/en/c/c5/Al_Nassr_FC_%28logo%29.svg', color: 0xfacc15, squad: [{ name: 'Cristiano Ronaldo', number: 7, pos: 'ST', rating: 89 }] },
+
+                // ---------------- LIGA INDONESIA ----------------
+                persib: { name: 'Persib Bandung', league: 'indonesia', logo: 'https://upload.wikimedia.org/wikipedia/commons/4/4b/Logo_Persib_Bandung.svg', color: 0x1e3a8a, squad: [{ name: 'David da Silva', number: 19, pos: 'ST', rating: 77 }] },
+                timnasindo: { name: 'Timnas Indonesia', league: 'indonesia', logo: 'https://upload.wikimedia.org/wikipedia/commons/9/90/Logo_PSSI_New.svg', color: 0xdc2626, squad: [{ name: 'Jay Idzes', number: 4, pos: 'CB', rating: 79 }, { name: 'Thom Haye', number: 19, pos: 'CM', rating: 78 }, { name: 'Marselino Ferdinan', number: 7, pos: 'AM', rating: 77 }] }
+            },
+            
+            players: {
+                1: { team: null, score: 0, lives: 3, qIndex: 0 },
+                2: { team: null, score: 0, lives: 3, qIndex: 0 }
+            },
+
+            quizPool: [
+                { q: "Klub manakah yang memenangkan gelar juara Liga Inggris musim lalu?", options: ["Manchester City", "Arsenal", "Liverpool", "Manchester United"], answer: 0, category: "Sejarah" },
+                { q: "Bagian kaki manakah yang paling akurat digunakan untuk menendang penalti terarah?", options: ["Ujung Kaki", "Punggung Kaki", "Kaki Bagian Dalam", "Tumit"], answer: 2, category: "Teknik" },
+                { q: "Siapakah pencetak gol terbanyak sepanjang masa di Liga Inggris (Premier League)?", options: ["Wayne Rooney", "Alan Shearer", "Harry Kane", "Sergio Aguero"], answer: 1, category: "Sejarah" },
+                { q: "Teknik menendang bola dengan punggung kaki (instep) biasanya digunakan untuk tendangan yang...", options: ["Melengkung", "Pelan namun akurat", "Keras dan cepat", "Melambung tinggi"], answer: 2, category: "Teknik" },
+                { q: "Kompetisi Liga Utama Inggris (Premier League) resmi dimulai pada tahun...", options: ["1990", "1992", "1995", "2000"], answer: 1, category: "Sejarah" },
+                { q: "Istilah untuk menendang bola melengkung melewati dinding pertahanan disebut...", options: ["Tackle", "Dribbling", "Curling / Banana Kick", "Heading"], answer: 2, category: "Teknik" },
+                { q: "Stadion kandang legendaris klub Manchester United dinamakan...", options: ["Anfield", "Etihad Stadium", "Old Trafford", "Emirates Stadium"], answer: 2, category: "Sejarah" },
+                { q: "Saat menendang penalti, dimana sebaiknya posisi kaki tumpu?", options: ["Jauh di belakang bola", "Tepat di samping bola", "Di depan bola", "Disilangkan"], answer: 1, category: "Teknik" },
+                { q: "Klub Liga Inggris manakah yang memiliki julukan 'The Gunners'?", options: ["Chelsea", "Arsenal", "Tottenham Hotspur", "West Ham United"], answer: 1, category: "Sejarah" },
+                { q: "Apa nama tendangan tipuan chip pelan melewati kiper yang sudah jatuh?", options: ["Volley", "Bicycle Kick", "Panenka", "Rabona"], answer: 2, category: "Teknik" }
+            ],
+
+            setMode: function(mode) {
+                this.mode = mode;
+                document.querySelectorAll('#screen-mode #btn-mode-solo, #screen-mode #btn-mode-duel').forEach(b => b.classList.remove('selected'));
+                document.getElementById(`btn-mode-${mode}`).classList.add('selected');
+                audioManager.play('click');
+            },
+
+            setMatchType: function(type) {
+                this.matchType = type;
+                document.querySelectorAll('#screen-mode #btn-mode-penalty, #screen-mode #btn-mode-freekick, #screen-mode #btn-mode-buildup').forEach(b => b.classList.remove('selected'));
+                document.getElementById(`btn-mode-${type}`).classList.add('selected');
+                audioManager.play('click');
+            },
+
+            setSeason: function(season) {
+                this.season = season;
+                document.querySelectorAll('.season-card').forEach(b => b.classList.remove('selected'));
+                document.getElementById(`btn-season-${season}`).classList.add('selected');
+                audioManager.play('click');
+            },
+
+            getCurrentStadiumList: function() {
+                return (this.tournamentType === 'champions') ? this.stadiumsChampions : this.stadiumsWorldCup;
+            },
+
+            setStadium: function(stadiumId) {
+                const list = this.getCurrentStadiumList();
+                this.selectedStadium = list.find(s => s.id === stadiumId) || list[0];
+                document.querySelectorAll('.stadium-card').forEach(b => b.classList.remove('selected'));
+                const el = document.getElementById(`stadium-${stadiumId}`);
+                if(el) el.classList.add('selected');
+                document.getElementById('selected-stadium-name').innerText = `${this.selectedStadium.name} (${this.selectedStadium.country})`;
+                audioManager.play('click');
+            },
+
+            selectTeam: function(teamId) {
+                this.selectedTeamId = teamId;
+                document.querySelectorAll('.team-card').forEach(c => c.classList.remove('border-yellow-400', 'bg-slate-700'));
+                const el = document.getElementById(`team-${teamId}`);
+                if(el) el.classList.add('border-yellow-400', 'bg-slate-700');
+                audioManager.play('click');
+            },
+
+            selectPlayer: function(playerName, playerNumber) {
+                const teamData = this.teamsData[this.selectedTeamId];
+                const playerObj = teamData.squad.find(p => p.name === playerName);
+                this.selectedPlayerObj = {
+                    teamName: teamData.name,
+                    logo: teamData.logo,
+                    player: playerName,
+                    number: playerNumber,
+                    pos: playerObj.pos,
+                    rating: playerObj.rating,
+                    color: teamData.color,
+                    squad: teamData.squad
+                };
+                document.querySelectorAll('.squad-card').forEach(c => c.classList.remove('border-yellow-400', 'bg-slate-700'));
+                const el = document.getElementById(`squad-player-${playerName.replace(/\s+/g, '')}`);
+                if(el) el.classList.add('border-yellow-400', 'bg-slate-700');
+                document.getElementById('selected-player-name').innerHTML = `
+                    <img src="${teamData.logo}" alt="${teamData.name}" class="inline-block w-8 h-8 rounded-full bg-white object-contain p-0.5 align-middle mr-2 border border-gray-600" onerror="this.src='https://placehold.co/32x32/1e293b/ffffff?text=LOGO'">
+                    ${playerName} (${playerObj.pos} | #${playerNumber} | ⭐${playerObj.rating}) - ${teamData.name}
+                `;
+                audioManager.play('click');
+            },
+
+            resetGame: function() {
+                this.players[1] = { team: null, score: 0, lives: 3, qIndex: 0 };
+                this.players[2] = { team: null, score: 0, lives: 3, qIndex: 0 };
+                this.currentPlayerTurn = 1;
+                this.selectedStadium = null;
+                this.selectedTeamId = null;
+                this.selectedPlayerObj = null;
+                const shuffled = [...this.quizPool].sort(() => Math.random() - 0.5);
+                this.activeQuizSet = shuffled.slice(0, 10);
+            }
+        };
+
+        const audioManager = {
+            muted: false,
+            sounds: {},
+            bgm: null,
+            anthemAudio: null,
+            bgmList: [
+                "https://assets.mixkit.co/music/preview/mixkit-energetic-upbeat-pop-dance-90.mp3",
+                "https://assets.mixkit.co/music/preview/mixkit-a-very-happy-christmas-897.mp3",
+                "https://assets.mixkit.co/music/preview/mixkit-pop-05-695.mp3",
+                "https://assets.mixkit.co/music/preview/mixkit-raising-me-higher-34.mp3"
+            ],
+            init: function() {
+                this.sounds = {
+                    click: document.getElementById('sfx-click'),
+                    kick: document.getElementById('sfx-kick'),
+                    cheer: document.getElementById('sfx-cheer'),
+                    post: document.getElementById('sfx-post'),
+                    catch: document.getElementById('sfx-catch'),
+                    sad: document.getElementById('sfx-sad'),
+                    goal: document.getElementById('sfx-goal'),
+                    whistle: document.getElementById('sfx-whistle')
+                };
+                this.bgm = document.getElementById('bgm');
+                this.anthemAudio = document.getElementById('anthem-audio');
+                this.bgm.volume = 0.3;
+                this.anthemAudio.volume = 0.6;
+            },
+            changeBGM: function(index) {
+                const isPlaying = !this.bgm.paused;
+                this.bgm.src = this.bgmList[index];
+                if (isPlaying && !this.muted) this.bgm.play().catch(e => console.log(e));
+            },
+            play: function(id) {
+                if(this.muted || !this.sounds[id]) return;
+                this.sounds[id].currentTime = 0;
+                this.sounds[id].play().catch(e => console.log(e));
+            },
+            playBGM: function() {
+                if(!this.muted && this.bgm.paused && this.anthemAudio.paused) {
+                    this.bgm.play().catch(e => console.log(e));
+                }
+            },
+            toggleMute: function() {
+                this.muted = !this.muted;
+                const btn = document.getElementById('btn-mute');
+                btn.innerText = this.muted ? '🔇' : '🔊';
+                if(this.muted) {
+                    this.bgm.pause();
+                    this.anthemAudio.pause();
+                    window.speechSynthesis.cancel();
+                } else {
+                    this.playBGM();
+                }
+            }
+        };
+
+        const commentatorManager = {
+            lang: 'id-ID',
+            langOptions: ['id-ID', 'en-US', 'es-ES', 'ar-SA'],
+            langLabels: {'id-ID': 'ID', 'en-US': 'EN', 'es-ES': 'ES', 'ar-SA': 'AR'},
+            voices: [],
+            phrases: {
+                'goal': { 'id-ID': 'Gol gol gol! Tendangan luar biasa!', 'en-US': 'What a goal! Fantastic strike!', 'es-ES': '¡Golazo! ¡Impresionante!', 'ar-SA': 'جول جول جول! تسديدة رائعة!' },
+                'wall': { 'id-ID': 'Mengenai pagar betis pemain lawan!', 'en-US': 'Blocked by the defensive wall!', 'es-ES': '¡Bloqueado por la barrera!', 'ar-SA': 'صدها الجدار البشري!' },
+                'miss': { 'id-ID': 'Sayang sekali, meleset!', 'en-US': 'He missed it!', 'es-ES': '¡Falló el tiro!', 'ar-SA': 'أضاعها!' },
+                'catch': { 'id-ID': 'Penyelamatan gemilang!', 'en-US': 'Brilliant save!', 'es-ES': '¡Gran parada!', 'ar-SA': 'تصدية رائع!' }
+            },
+            init: function() {
+                const loadVoices = () => { this.voices = window.speechSynthesis.getVoices(); };
+                loadVoices();
+                if (window.speechSynthesis.onvoiceschanged !== undefined) window.speechSynthesis.onvoiceschanged = loadVoices;
+            },
+            setLang: function(langCode) {
+                this.lang = langCode;
+                audioManager.play('click');
+                const btnLang = document.getElementById('btn-lang');
+                if(btnLang) btnLang.innerText = this.langLabels[langCode];
+            },
+            cycleLang: function() {
+                let currentIndex = this.langOptions.indexOf(this.lang);
+                let nextIndex = (currentIndex + 1) % this.langOptions.length;
+                this.setLang(this.langOptions[nextIndex]);
+            },
+            speakCustom: function(text) {
+                if (audioManager.muted || !window.speechSynthesis) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = this.lang;
+                utterance.rate = 1.1;
+                utterance.pitch = 0.8;
+                window.speechSynthesis.speak(utterance);
+            },
+            speak: function(type) {
+                if (audioManager.muted || !window.speechSynthesis) return;
+                window.speechSynthesis.cancel();
+                const text = this.phrases[type][this.lang] || this.phrases['miss'][this.lang];
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = this.lang;
+                utterance.rate = 1.25;
+                utterance.pitch = 0.75;
+                window.speechSynthesis.speak(utterance);
+            },
+            primeVoices: function() {
+                if(window.speechSynthesis) {
+                    let u = new SpeechSynthesisUtterance('');
+                    u.volume = 0;
+                    window.speechSynthesis.speak(u);
+                }
+            }
+        };
+
+        const scene3D = {
+            scene: null, camera: null, renderer: null, 
+            ball: null, player: null, goalie: null, referee: null,
+            weatherParticles: null, supporters: [], wallGroup: null,
+            cameraTarget: null, activePassPath: null, fullFieldGroup: null,
+            
+            ballVelocity: {x: 0, y: 0, z: 0},
+            isBallMoving: false,
+            gravity: -9.8,
+            floorY: 0.3,
+
+            init: function() {
+                const container = document.getElementById('game-canvas');
+                this.scene = new THREE.Scene();
+                this.applySeasonAtmosphere();
+
+                this.cameraTarget = new THREE.Vector3(0, 1, -10);
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.updateCameraPosition();
+
+                this.renderer = new THREE.WebGLRenderer({ antialias: true });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                container.appendChild(this.renderer.domElement);
+
+                const ambientLight = new THREE.AmbientLight(0xffffff, gameData.season === 'night' ? 0.3 : 0.6);
+                this.scene.add(ambientLight);
+
+                const spotLight = new THREE.SpotLight(0xffffff, gameData.season === 'night' ? 1.8 : 1.2);
+                spotLight.position.set(0, 25, 10);
+                spotLight.castShadow = true;
+                this.scene.add(spotLight);
+
+                this.createEnvironment();
+                this.createWeatherEffect();
+                this.createCharacters();
+                this.createSupporters();
+                this.setupMatchTypePosition();
+
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+
+                this.animate();
+            },
+
+            applySeasonAtmosphere: function() {
+                if (gameData.season === 'night') {
+                    this.scene.background = new THREE.Color(0x020617);
+                    this.scene.fog = new THREE.FogExp2(0x020617, 0.015);
+                } else if (gameData.season === 'rain') {
+                    this.scene.background = new THREE.Color(0x0f172a);
+                    this.scene.fog = new THREE.FogExp2(0x0f172a, 0.02);
+                } else if (gameData.season === 'snow') {
+                    this.scene.background = new THREE.Color(0x334155);
+                    this.scene.fog = new THREE.FogExp2(0x334155, 0.025);
+                } else {
+                    this.scene.background = new THREE.Color(0x38bdf8);
+                    this.scene.fog = new THREE.FogExp2(0x38bdf8, 0.005);
+                }
+            },
+
+            createWeatherEffect: function() {
+                if (gameData.season === 'fine' || gameData.season === 'night') return;
+                const particleCount = 600;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+
+                for (let i = 0; i < particleCount * 3; i += 3) {
+                    positions[i] = (Math.random() - 0.5) * 60;
+                    positions[i + 1] = Math.random() * 40;
+                    positions[i + 2] = (Math.random() - 0.5) * 60;
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                const isSnow = gameData.season === 'snow';
+                const material = new THREE.PointsMaterial({
+                    color: isSnow ? 0xffffff : 0x38bdf8,
+                    size: isSnow ? 0.3 : 0.15,
+                    transparent: true,
+                    opacity: 0.6
+                });
+
+                this.weatherParticles = new THREE.Points(geometry, material);
+                this.scene.add(this.weatherParticles);
+            },
+
+            updateWeather: function() {
+                if (!this.weatherParticles) return;
+                const positions = this.weatherParticles.geometry.attributes.position.array;
+                const isSnow = gameData.season === 'snow';
+                for (let i = 1; i < positions.length; i += 3) {
+                    positions[i] -= isSnow ? 0.05 : 0.6;
+                    if (positions[i] < 0) positions[i] = 40;
+                }
+                this.weatherParticles.geometry.attributes.position.needsUpdate = true;
+            },
+
+            createEnvironment: function() {
+                const pitchGeo = new THREE.PlaneGeometry(50, 80);
+                const pitchMat = new THREE.MeshStandardMaterial({ 
+                    color: gameData.season === 'rain' ? 0x0f5132 : 0x15803d, 
+                    roughness: gameData.season === 'rain' ? 0.3 : 0.8 
+                });
+                const pitch = new THREE.Mesh(pitchGeo, pitchMat);
+                pitch.rotation.x = -Math.PI / 2;
+                pitch.receiveShadow = true;
+                this.scene.add(pitch);
+
+                const goalGroup = new THREE.Group();
+                const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 0.5 });
+                
+                const leftPostGeo = new THREE.CylinderGeometry(0.1, 0.1, 3.5);
+                const leftPost = new THREE.Mesh(leftPostGeo, postMat);
+                leftPost.position.set(-3.6, 1.75, -14);
+                goalGroup.add(leftPost);
+
+                const rightPost = leftPost.clone();
+                rightPost.position.x = 3.6;
+                goalGroup.add(rightPost);
+
+                const crossGeo = new THREE.CylinderGeometry(0.1, 0.1, 7.4);
+                const cross = new THREE.Mesh(crossGeo, postMat);
+                cross.rotation.z = Math.PI / 2;
+                cross.position.set(0, 3.5, -14);
+                goalGroup.add(cross);
+
+                const netGeo = new THREE.PlaneGeometry(7.2, 3.5, 12, 8);
+                const netMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.35 });
+                const net = new THREE.Mesh(netGeo, netMat);
+                net.position.set(0, 1.75, -14.4);
+                goalGroup.add(net);
+
+                this.scene.add(goalGroup);
+            },
+
+            buildRealisticHuman: function(colorHex) {
+                const group = new THREE.Group();
+                const bodyMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3 });
+                const bodyGeo = new THREE.BoxGeometry(0.8, 1.1, 0.4);
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.position.y = 1.1;
+                group.add(body);
+
+                const headMat = new THREE.MeshStandardMaterial({ color: 0xffd1b3, roughness: 0.5 });
+                const headGeo = new THREE.SphereGeometry(0.3, 16, 16);
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.y = 1.9;
+                group.add(head);
+
+                const limbMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+                const armGeo = new THREE.BoxGeometry(0.25, 0.9, 0.25);
+                
+                const leftArm = new THREE.Mesh(armGeo, limbMat);
+                leftArm.position.set(-0.55, 1.1, 0);
+                group.add(leftArm);
+                group.leftArm = leftArm;
+
+                const rightArm = new THREE.Mesh(armGeo, limbMat);
+                rightArm.position.set(0.55, 1.1, 0);
+                group.add(rightArm);
+                group.rightArm = rightArm;
+
+                const legGeo = new THREE.BoxGeometry(0.28, 0.9, 0.28);
+                const leftLeg = new THREE.Mesh(legGeo, limbMat);
+                leftLeg.position.set(-0.22, 0.45, 0);
+                group.add(leftLeg);
+
+                const rightLeg = new THREE.Mesh(legGeo, limbMat);
+                rightLeg.position.set(0.22, 0.45, 0);
+                group.add(rightLeg);
+
+                return group;
+            },
+
+            createCharacters: function() {
+                const activePlayer = gameData.players[gameData.currentPlayerTurn];
+                const teamColor = activePlayer.team ? activePlayer.team.color : 0xff0000;
+                
+                this.player = this.buildRealisticHuman(teamColor);
+                this.player.position.set(-1.5, 0, 1.5);
+                this.scene.add(this.player);
+
+                this.goalie = this.buildRealisticHuman(0xf59e0b);
+                this.goalie.position.set(0, 0, -13.5);
+                this.scene.add(this.goalie);
+
+                this.referee = this.buildRealisticHuman(0xeab308);
+                this.referee.position.set(2.5, 0, 2);
+                this.scene.add(this.referee);
+
+                const ballGeo = new THREE.SphereGeometry(0.22, 32, 32);
+                const ballMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+                this.ball = new THREE.Mesh(ballGeo, ballMat);
+                this.ball.position.set(0, this.floorY, 0);
+                this.ball.castShadow = true;
+                this.scene.add(this.ball);
+            },
+
+            createSupporters: function() {
+                for (let i = 0; i < 40; i++) {
+                    const supMat = new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0x3b82f6 : 0xef4444 });
+                    const supGeo = new THREE.BoxGeometry(0.6, 0.8, 0.2);
+                    const sup = new THREE.Mesh(supGeo, supMat);
+                    const angle = (i / 40) * Math.PI;
+                    sup.position.set(Math.cos(angle) * 28, 4 + (i % 3) * 1.5, -Math.sin(angle) * 28 - 5);
+                    this.scene.add(sup);
+                    this.supporters.push(sup);
+                }
+            },
+
+            createDefensiveWall: function() {
+                this.wallGroup = new THREE.Group();
+                for (let i = -1; i <= 1; i++) {
+                    const defender = this.buildRealisticHuman(0x475569);
+                    defender.position.set(i * 0.9, 0, -8);
+                    this.wallGroup.add(defender);
+                }
+                this.scene.add(this.wallGroup);
+            },
+
+            playCinematicIntro: function(callback) {
+                audioManager.play('whistle');
+                setTimeout(() => audioManager.play('cheer'), 500);
+
+                this.camera.position.set(0, 25, -40);
+                this.cameraTarget.set(0, 0, 0);
+
+                let endCamPos = {x:0, y:3, z:12};
+                let endTarget = {x:0, y:1, z:-10};
+                
+                if(gameData.matchType === 'freekick') {
+                    endCamPos = {x:0, y: 3.5, z: 16};
+                    endTarget = {x:0, y: 1.2, z: -14};
+                } else if(gameData.matchType === 'buildup') {
+                    endCamPos = {x:0, y: 6, z: 35};
+                    endTarget = {x:0, y: 1, z: 15};
+                }
+
+                gsap.to(this.camera.position, {
+                    x: endCamPos.x, y: endCamPos.y, z: endCamPos.z,
+                    duration: 3.5, ease: "power2.inOut"
+                });
+                gsap.to(this.cameraTarget, {
+                    x: endTarget.x, y: endTarget.y, z: endTarget.z,
+                    duration: 3.5, ease: "power2.inOut",
+                    onComplete: () => {
+                        if(callback) callback();
+                    }
+                });
+            },
+
+            updateCameraPosition: function() {
+                if(gameData.matchType === 'freekick') {
+                    this.camera.position.set(0, 3.5, 16);
+                    this.cameraTarget.set(0, 1.2, -14);
+                } else if(gameData.matchType === 'buildup') {
+                    this.camera.position.set(0, 6, 35);
+                    this.cameraTarget.set(0, 1, 15);
+                } else {
+                    this.camera.position.set(0, 3, 12);
+                    this.cameraTarget.set(0, 1, -10);
+                }
+            },
+
+            setupMatchTypePosition: function() {
+                if (this.fullFieldGroup) {
+                    this.scene.remove(this.fullFieldGroup);
+                    this.fullFieldGroup = null;
+                }
+                if (this.wallGroup) {
+                    this.scene.remove(this.wallGroup);
+                    this.wallGroup = null;
+                }
+                
+                this.isBallMoving = false;
+                const activePlayer = gameData.players[gameData.currentPlayerTurn];
+                const teamColor = activePlayer.team ? activePlayer.team.color : 0xff0000;
+
+                if (this.player) {
+                    this.scene.remove(this.player);
+                }
+                this.player = this.buildRealisticHuman(teamColor);
+                this.scene.add(this.player);
+
+                if(gameData.matchType === 'freekick') {
+                    if (this.ball) this.ball.position.set(0, this.floorY, 4);
+                    if (this.player) {
+                        this.player.position.set(-1.2, 0, 5.5);
+                        this.player.rotation.y = Math.PI;
+                    }
+                    if (this.referee) this.referee.position.set(3, 0, 6);
+                    this.createDefensiveWall();
+                    document.getElementById('badge-mode-text').innerText = "FREE KICK";
+                    
+                } else if(gameData.matchType === 'buildup') {
+                    this.player.visible = false;
+                    if (this.referee) this.referee.visible = true;
+                    document.getElementById('badge-mode-text').innerText = "BUILD-UP TIM";
+
+                    this.fullFieldGroup = new THREE.Group();
+                    const squadList = activePlayer.team.squad || [];
+                    const randomSquad = [...squadList].sort(() => 0.5 - Math.random()).slice(0, 2);
+                    const strikerObj = squadList.find(s => s.pos === 'ST') || squadList[0];
+                    
+                    const passPathNames = [
+                        randomSquad[0] ? randomSquad[0].name : 'Pemain 1',
+                        randomSquad[1] ? randomSquad[1].name : 'Pemain 2',
+                        strikerObj.name
+                    ];
+
+                    const passCoordinates = [
+                        { x: 0, z: 34 },
+                        { x: -2, z: 16 },
+                        { x: 0, z: -2 }
+                    ];
+
+                    this.activePassPath = { names: passPathNames, coords: passCoordinates };
+
+                    const teamPositions = [
+                        { role: 'GK', x: 0, z: 34, num: '1' },
+                        { role: 'CM', x: -2, z: 16, num: '8' },
+                        { role: 'ST', x: 0, z: -2, num: '9' }
+                    ];
+
+                    teamPositions.forEach((p) => {
+                        const mesh = this.buildRealisticHuman(teamColor);
+                        mesh.position.set(p.x, 0, p.z);
+                        mesh.userData = { baseX: p.x, baseZ: p.z };
+                        mesh.rotation.y = Math.PI; 
+                        this.fullFieldGroup.add(mesh);
+                    });
+
+                    this.scene.add(this.fullFieldGroup);
+                    if(this.ball) this.ball.position.set(0, this.floorY, 34);
+
+                } else {
+                    if (this.player) this.player.visible = true;
+                    if (this.goalie) this.goalie.visible = true;
+                    if (this.referee) this.referee.visible = true;
+
+                    if (this.ball) this.ball.position.set(0, this.floorY, 0);
+                    if (this.player) {
+                        this.player.position.set(-1.5, 0, 1.5);
+                        this.player.rotation.y = Math.PI;
+                    }
+                    if (this.goalie) this.goalie.position.set(0, 0, -13.5);
+                    if (this.referee) this.referee.position.set(2.5, 0, 2);
+                    document.getElementById('badge-mode-text').innerText = "PENALTI";
+                }
+                this.updateCameraPosition();
+            },
+
+            updateGoalkeeperMovement: function(delta) {
+                if (this.goalie && this.goalie.visible) {
+                    const time = Date.now() * 0.003;
+                    this.goalie.position.x = Math.sin(time) * 2.2;
+                }
+                
+                if (gameData.matchType === 'buildup' && this.fullFieldGroup) {
+                    const time = Date.now() * 0.002;
+                    this.fullFieldGroup.children.forEach((member, index) => {
+                        if (member.userData && member.userData.baseX !== undefined) {
+                            const sway = Math.sin(time + index) * 0.35;
+                            member.position.x = member.userData.baseX + sway;
+                        }
+                    });
+                }
+                
+                if (this.referee && this.ball) {
+                    const targetX = this.ball.position.x * 0.5 + 2.0;
+                    const targetZ = this.ball.position.z * 0.5;
+                    this.referee.position.x += (targetX - this.referee.position.x) * 0.05;
+                    this.referee.position.z += (targetZ - this.referee.position.z) * 0.05;
+                    this.referee.lookAt(this.ball.position.x, this.referee.position.y, this.ball.position.z);
+                }
+            },
+
+            runBuildupSequence: function(resultType, shotStyle) {
+                if (!this.activePassPath) return;
+
+                const coords = this.activePassPath.coords;
+                const names = this.activePassPath.names;
+                let currentIndex = 0;
+                
+                const executeNextPass = () => {
+                    if (currentIndex < coords.length - 1) {
+                        const nextCoord = coords[currentIndex + 1];
+                        const fromName = names[currentIndex];
+                        const toName = names[currentIndex + 1];
+
+                        let commentaryText = `Dari ${fromName} mengoper bola ke ${toName}.`;
+                        commentatorManager.speakCustom(commentaryText);
+                        
+                        gsap.to(this.ball.position, {
+                            x: nextCoord.x,
+                            z: nextCoord.z,
+                            duration: 1.1,
+                            ease: "power1.inOut",
+                            onUpdate: () => {
+                                this.cameraTarget.copy(this.ball.position);
+                                this.camera.position.x += (this.ball.position.x - this.camera.position.x) * 0.05;
+                                this.camera.position.z = this.ball.position.z + 10;
+                            },
+                            onComplete: () => {
+                                audioManager.play('kick');
+                                currentIndex++;
+                                setTimeout(executeNextPass, 600);
+                            }
+                        });
+                    } else {
+                        let finalCommentary = `Umpan terarah ke ${names[names.length - 1]}, bersiap melakukan eksekusi!`;
+                        commentatorManager.speakCustom(finalCommentary);
+
+                        setTimeout(() => {
+                            this.executeFinalShot(resultType, shotStyle, true);
+                        }, 800);
+                    }
+                };
+
+                executeNextPass();
+            },
+
+            executeFinalShot: function(resultType, shotStyle, isBuildup = false) {
+                const shooter = isBuildup && this.fullFieldGroup ? this.fullFieldGroup.children[this.fullFieldGroup.children.length - 1] : this.player;
+                const keeper = this.goalie;
+                
+                const startX = shooter ? shooter.position.x : 0;
+                const startZ = shooter ? shooter.position.z : 0;
+                
+                let duration = 0.75;
+                let ballEnd = {x: 0, y: 0, z: -14.5};
+                let hitsWall = false;
+                let isCatch = false;
+
+                if (shotStyle === 'header') {
+                    if (shooter) gsap.to(shooter.position, { y: 2, duration: 0.3, yoyo: true, repeat: 1 });
+                    audioManager.play('kick');
+                } else if (shotStyle === 'bicycle') {
+                    if (shooter) {
+                        gsap.to(shooter.position, { y: 2.5, duration: 0.4, yoyo: true, repeat: 1 });
+                        gsap.to(shooter.rotation, { x: -Math.PI * 2, duration: 0.8 });
+                    }
+                    setTimeout(() => { audioManager.play('kick'); }, 400);
+                } else if (shotStyle === 'volley') {
+                    if (shooter) {
+                        gsap.to(shooter.position, { y: 1, duration: 0.3, yoyo: true, repeat: 1 });
+                        gsap.to(shooter.rotation, { z: -Math.PI / 4, duration: 0.2, yoyo: true, repeat: 1 });
+                    }
+                    audioManager.play('kick');
+                } else {
+                    if (shooter) {
+                        gsap.to(shooter.position, {x: startX + 1.1, z: startZ - 0.9, duration: 0.3, onComplete: () => { audioManager.play('kick'); }});
+                    }
+                    if (shotStyle === 'powerful' || shotStyle === 'power') duration = 0.45;
+                    else if (shotStyle === 'panenka') duration = 0.9;
+                }
+
+                if (gameData.matchType === 'freekick' && Math.random() < 0.38 && shotStyle !== 'curve' && shotStyle !== 'panenka') {
+                    hitsWall = true;
+                }
+
+                if (hitsWall) {
+                    ballEnd.x = (Math.random() - 0.5) * 1.5;
+                    ballEnd.y = 1.0;
+                    ballEnd.z = -5.0;
+                    setTimeout(() => {
+                        audioManager.play('post');
+                        audioManager.play('sad');
+                        uiManager.showExpression('🧱💥');
+                        commentatorManager.speak('wall');
+                    }, 300);
+                } else if (resultType === 'goal') {
+                    if (shotStyle === 'panenka') {
+                        ballEnd.x = (Math.random() * 0.6 - 0.3);
+                        ballEnd.y = 2.4;
+                    } else if (shotStyle === 'curve') {
+                        ballEnd.x = Math.random() > 0.5 ? 2.8 : -2.8;
+                        ballEnd.y = 2.1;
+                    } else if (shotStyle === 'powerful' || shotStyle === 'power') {
+                        ballEnd.x = (Math.random() * 2 - 1) * 2.5;
+                        ballEnd.y = 2.5;
+                    } else if (shotStyle === 'header') {
+                        ballEnd.x = (Math.random() * 2 - 1) * 2.0;
+                        ballEnd.y = 0.5;
+                    } else {
+                        ballEnd.x = (Math.random() * 2 - 1) * 2.2;
+                        ballEnd.y = 1.5;
+                    }
+
+                    setTimeout(() => {
+                        audioManager.play('goal');
+                        audioManager.play('cheer');
+                        uiManager.showExpression('🤩🏆');
+                        uiManager.showCinematicGoal();
+                        commentatorManager.speak('goal');
+                        if (shooter) this.triggerCelebration(shooter, isBuildup);
+                    }, duration * 1000);
+                } else {
+                    isCatch = Math.random() > 0.5;
+                    
+                    if (isCatch && keeper) {
+                        ballEnd.x = keeper.position.x; 
+                        ballEnd.y = 1.2;
+                        ballEnd.z = -13.5;
+                        
+                        gsap.to(keeper.position, {x: ballEnd.x, y: 1.0, duration: 0.3});
+                        setTimeout(() => {
+                            uiManager.showExpression('😜🧤');
+                            audioManager.play('catch');
+                            audioManager.play('sad');
+                            commentatorManager.speak('catch');
+                        }, duration * 1000);
+                    } else {
+                        ballEnd.x = 4.8 * (Math.random() > 0.5 ? 1 : -1);
+                        ballEnd.y = 0.5 + Math.random() * 3;
+                        ballEnd.z = -16;
+                        
+                        if (keeper) {
+                            gsap.to(keeper.position, {x: ballEnd.x * 0.4, y: 1.0, duration: 0.4});
+                        }
+                        setTimeout(() => {
+                            uiManager.showExpression('🤦‍♂️❌');
+                            audioManager.play('sad');
+                            commentatorManager.speak('miss');
+                        }, duration * 1000);
+                    }
+                }
+
+                this.isBallMoving = true;
+                const dx = ballEnd.x - this.ball.position.x;
+                const dz = ballEnd.z - this.ball.position.z;
+                const dy = ballEnd.y - this.ball.position.y;
+                
+                this.ballVelocity.x = dx / duration;
+                this.ballVelocity.z = dz / duration;
+                this.ballVelocity.y = (dy - (0.5 * this.gravity * duration * duration)) / duration;
+
+                let waitTime = (!hitsWall && resultType === 'goal') ? 4500 : 2500;
+
+                gsap.to(this.camera.position, {
+                    z: gameData.matchType === 'freekick' ? 7 : (isBuildup ? 0 : 5), 
+                    y: 2, 
+                    duration: duration + 0.3
+                });
+                gsap.to(this.cameraTarget, {
+                    x: ballEnd.x, y: ballEnd.y, z: ballEnd.z, duration: duration + 0.3,
+                    onComplete: () => {
+                        setTimeout(() => { gameLogic.resolveTurn(!hitsWall && resultType === 'goal'); }, waitTime);
+                    }
+                });
+            },
+
+            triggerCelebration: function(scorer, isBuildup) {
+                gsap.to(scorer.position, { y: 1.2, duration: 0.25, yoyo: true, repeat: 3 });
+                if (scorer.leftArm && scorer.rightArm) {
+                    gsap.to(scorer.leftArm.rotation, { x: -Math.PI, duration: 0.3, yoyo: true, repeat: 1 });
+                    gsap.to(scorer.rightArm.rotation, { x: -Math.PI, duration: 0.3, yoyo: true, repeat: 1 });
+                }
+
+                if (isBuildup && this.fullFieldGroup) {
+                    this.fullFieldGroup.children.forEach((mate) => {
+                        if (mate !== scorer) {
+                            gsap.to(mate.position, {
+                                x: scorer.position.x + (Math.random() - 0.5) * 1.5,
+                                z: scorer.position.z + (Math.random() - 0.5) * 1.5,
+                                duration: 0.8,
+                                ease: "power1.out"
+                            });
+                        }
+                    });
+                }
+            },
+
+            resetPositions: function() {
+                this.setupMatchTypePosition();
+            },
+
+            kickAnimation: function(resultType, shotStyle) {
+                if (gameData.matchType === 'buildup') {
+                    this.runBuildupSequence(resultType, shotStyle);
+                } else {
+                    this.executeFinalShot(resultType, shotStyle, false);
+                }
+            },
+
+            updatePhysics: function(deltaTime) {
+                if (!this.isBallMoving) return;
+                this.ball.position.x += this.ballVelocity.x * deltaTime;
+                this.ball.position.y += this.ballVelocity.y * deltaTime;
+                this.ball.position.z += this.ballVelocity.z * deltaTime;
+                this.ballVelocity.y += this.gravity * deltaTime;
+
+                if (this.ball.position.y <= this.floorY) {
+                    this.ball.position.y = this.floorY;
+                    this.ballVelocity.y = -this.ballVelocity.y * 0.6;
+                    this.ballVelocity.x *= 0.8;
+                    this.ballVelocity.z *= 0.8;
+                }
+            },
+
+            lastTime: 0,
+            animate: function(time) {
+                requestAnimationFrame((t) => scene3D.animate(t));
+                let deltaTime = (time - this.lastTime) / 1000;
+                this.lastTime = time;
+                if (isNaN(deltaTime) || deltaTime > 0.1) deltaTime = 0.016;
+
+                this.updatePhysics(deltaTime);
+                this.updateWeather();
+                this.updateGoalkeeperMovement(deltaTime);
+                
+                if(this.camera && this.cameraTarget) {
+                    this.camera.lookAt(this.cameraTarget);
+                }
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            }
+        };
+
+        const uiManager = {
+            currentScreen: 'screen-menu',
+            init: function() {
+                this.generateTeamGrid('all');
+                audioManager.init();
+                commentatorManager.init();
+            },
+            startIntro: function() {
+                audioManager.playBGM();
+                audioManager.play('click');
+                commentatorManager.primeVoices();
+                document.getElementById('intro-overlay').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('intro-overlay').classList.add('hidden');
+                    document.getElementById('global-controls').classList.remove('hidden');
+                    this.showScreen('screen-menu');
+                }, 500);
+            },
+            showScreen: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const el = document.getElementById(id);
+                if(el) el.classList.add('active');
+                this.currentScreen = id;
+            },
+            exitGame: function() {
+                audioManager.play('click');
+                this.showScreen('screen-exit');
+            },
+            showInstructions: function() { document.getElementById('modal-instructions').classList.remove('hidden'); },
+            hideInstructions: function() { document.getElementById('modal-instructions').classList.add('hidden'); },
+            showSettings: function() { document.getElementById('modal-settings').classList.remove('hidden'); },
+            hideSettings: function() { document.getElementById('modal-settings').classList.add('hidden'); },
+            
+            selectTournament: function(type) {
+                audioManager.play('click');
+                gameData.tournamentType = type;
+                if(type === 'worldcup') {
+                    gameData.matchType = 'penalty';
+                } else if(type === 'champions') {
+                    gameData.matchType = 'freekick';
+                } else if(type === 'masterleague') {
+                    gameData.matchType = 'buildup';
+                } else {
+                    gameData.matchType = 'penalty';
+                }
+                this.goToModeSelect();
+            },
+
+            goToModeSelect: function() { this.showScreen('screen-mode'); },
+            goToSeasonSelect: function() { this.showScreen('screen-season'); },
+            goToStadiumSelect: function() {
+                this.generateStadiumGrid();
+                this.showScreen('screen-stadium');
+            },
+            goToMenu: function() {
+                gameData.resetGame();
+                this.showScreen('screen-menu');
+            },
+            goToTeamSelect: function() {
+                if(!gameData.selectedStadium) return alert("Pilih stadion terlebih dahulu!");
+                gameData.selectedTeamId = null; 
+                gameData.selectedPlayerObj = null;
+                gameData.currentPlayerTurn = 1;
+                document.getElementById('team-select-title').innerText = gameData.mode === 'duel' ? "Pilih Klub (Player 1)" : "Pilih Klub Dunia";
+                this.showScreen('screen-team');
+            },
+            goToSquadSelect: function(teamId) {
+                gameData.selectTeam(teamId);
+                const teamData = gameData.teamsData[teamId];
+                let titleP = gameData.currentPlayerTurn === 1 ? "Player 1" : "Player 2";
+                document.getElementById('squad-team-label').innerHTML = `
+                    <img src="${teamData.logo}" alt="${teamData.name}" class="inline-block w-8 h-8 rounded-full bg-white object-contain p-0.5 align-middle mr-2 border border-gray-600" onerror="this.src='https://placehold.co/32x32/1e293b/ffffff?text=LOGO'">
+                    ${titleP} - ${teamData.name} Skuad
+                `;
+                const grid = document.getElementById('squad-grid');
+                grid.innerHTML = '';
+                teamData.squad.forEach(p => {
+                    const btn = document.createElement('button');
+                    btn.id = `squad-player-${p.name.replace(/\s+/g, '')}`;
+                    btn.className = `squad-card btn-select rounded-lg p-3 flex items-center justify-between border-2 border-transparent`;
+                    btn.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <span class="bg-blue-900/80 px-2 py-1 rounded text-xs text-blue-300 font-bold">${p.pos}</span>
+                            <span class="text-white font-bold text-lg">${p.name}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-yellow-400 font-bold">⭐ ${p.rating}</span>
+                            <span class="text-gray-400 font-bold">#${p.number}</span>
+                        </div>
+                    `;
+                    btn.onclick = () => gameData.selectPlayer(p.name, p.number);
+                    grid.appendChild(btn);
+                });
+                this.showScreen('screen-squad');
+            },
+            generateStadiumGrid: function() {
+                const grid = document.getElementById('stadium-grid');
+                grid.innerHTML = '';
+                const list = gameData.getCurrentStadiumList();
+                
+                if (gameData.tournamentType === 'champions') {
+                    document.getElementById('stadium-screen-title').innerText = "Stadion UEFA Champions League";
+                    document.getElementById('stadium-screen-subtitle').innerText = "Stadion Legendaris Malam Eropa";
+                } else {
+                    document.getElementById('stadium-screen-title').innerText = "Stadion Piala Dunia 2026";
+                    document.getElementById('stadium-screen-subtitle').innerText = "Venue Resmi USA, Kanada & Meksiko";
+                }
+
+                list.forEach(stadium => {
+                    const btn = document.createElement('button');
+                    btn.id = `stadium-${stadium.id}`;
+                    btn.className = `stadium-card btn-select rounded-lg p-3 flex flex-col items-center justify-center border-2 border-transparent text-center gap-1`;
+                    btn.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <img src="https://flagcdn.com/w40/${stadium.flag}.png" alt="${stadium.country}" class="w-6 h-4 rounded-sm object-cover shadow border border-gray-600">
+                            <span class="text-yellow-400 font-bold">${stadium.country}</span>
+                        </div>
+                        <span class="text-white text-sm">${stadium.name}</span>
+                    `;
+                    btn.onclick = () => gameData.setStadium(stadium.id);
+                    grid.appendChild(btn);
+                });
+                gameData.setStadium(list[0].id);
+            },
+            generateTeamGrid: function(leagueFilter) {
+                const grid = document.getElementById('team-grid');
+                grid.innerHTML = '';
+                Object.keys(gameData.teamsData).forEach(key => {
+                    const t = gameData.teamsData[key];
+                    if(leagueFilter !== 'all' && t.league !== leagueFilter) return;
+                    
+                    const btn = document.createElement('button');
+                    btn.id = `team-${key}`;
+                    btn.className = `team-card btn-select rounded-lg p-3 flex flex-col items-center justify-center border-2 border-transparent gap-2`;
+                    btn.innerHTML = `
+                        <img src="${t.logo}" alt="${t.name}" class="w-12 h-12 rounded-full bg-white object-contain p-1 shadow border border-gray-600" onerror="this.src='https://placehold.co/48x48/1e293b/ffffff?text=LOGO'">
+                        <span class="text-white font-bold text-sm text-center leading-tight">${t.name}</span>
+                    `;
+                    btn.onclick = () => this.goToSquadSelect(key);
+                    grid.appendChild(btn);
+                });
+            },
+            filterTeams: function(league) {
+                audioManager.play('click');
+                this.generateTeamGrid(league);
+            },
+            confirmTeamSelection: function() {
+                if (!gameData.selectedPlayerObj) return alert("Pilih pemain terlebih dahulu!");
+                gameData.players[gameData.currentPlayerTurn].team = gameData.selectedPlayerObj;
+                
+                if (gameData.mode === 'duel' && gameData.currentPlayerTurn === 1) {
+                    gameData.currentPlayerTurn = 2;
+                    gameData.selectedTeamId = null;
+                    gameData.selectedPlayerObj = null;
+                    document.getElementById('team-select-title').innerText = "Pilih Klub (Player 2)";
+                    this.showScreen('screen-team');
+                } else {
+                    gameData.currentPlayerTurn = 1;
+                    this.startGame();
+                }
+            },
+            startGame: function() {
+                audioManager.playBGM();
+                this.showScreen('screen-game');
+                
+                const topBar = document.getElementById('hud-top-bar');
+                if(topBar) topBar.style.opacity = '0';
+                document.getElementById('quiz-panel').classList.add('translate-y-full');
+
+                if (gameData.mode === 'duel') {
+                    document.getElementById('hud-p2-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('hud-p2-container').classList.add('hidden');
+                }
+
+                if(!scene3D.scene) scene3D.init();
+                else {
+                    document.getElementById('game-canvas').innerHTML = '';
+                    scene3D.init();
+                }
+                
+                scene3D.playCinematicIntro(() => {
+                    if(topBar) topBar.style.opacity = '1';
+                    this.updateHUD();
+                    gameLogic.startTurn(true);
+                });
+            },
+            updateHUD: function() {
+                const p1 = gameData.players[1];
+                document.getElementById('hud-p1-name').innerText = `${p1.team.player}`;
+                document.getElementById('hud-p1-flag').src = `${p1.team.logo}`;
+                document.getElementById('hud-p1-score').innerText = `Skor: ${p1.score}`;
+                
+                let livesHTML = '';
+                for(let i = 0; i < 3; i++) {
+                    if(i < p1.lives) livesHTML += '<span class="heart">❤</span>';
+                    else livesHTML += '<span class="heart lost">❤</span>';
+                }
+                document.getElementById('hud-p1-lives').innerHTML = livesHTML;
+
+                if (gameData.mode === 'duel' && gameData.players[2].team) {
+                    const p2 = gameData.players[2];
+                    document.getElementById('hud-p2-name').innerText = `${p2.team.player}`;
+                    document.getElementById('hud-p2-flag').src = `${p2.team.logo}`;
+                    document.getElementById('hud-p2-score').innerText = `Skor: ${p2.score}`;
+                    
+                    let livesHTML2 = '';
+                    for(let i = 0; i < 3; i++) {
+                        if(i < p2.lives) livesHTML2 += '<span class="heart">❤</span>';
+                        else livesHTML2 += '<span class="heart lost">❤</span>';
+                    }
+                    document.getElementById('hud-p2-lives').innerHTML = livesHTML2;
+                }
+
+                document.getElementById('active-player-indicator').innerText = `Giliran: Player ${gameData.currentPlayerTurn} (${gameData.players[gameData.currentPlayerTurn].team.player})`;
+            },
+            showQuiz: function(questionObj, qNum) {
+                document.getElementById('quiz-number').innerText = `Ronde ${qNum}/10`;
+                document.getElementById('quiz-category').innerText = questionObj.category;
+                document.getElementById('quiz-question').innerText = questionObj.q;
+                const optionsContainer = document.getElementById('quiz-options');
+                optionsContainer.innerHTML = '';
+                questionObj.options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'quiz-option p-3 text-white text-left font-semibold text-lg';
+                    btn.innerText = `${['A', 'B', 'C', 'D'][index]}. ${opt}`;
+                    btn.onclick = () => gameLogic.handleAnswer(index, questionObj.answer, btn);
+                    optionsContainer.appendChild(btn);
+                });
+                document.getElementById('quiz-panel').classList.remove('translate-y-full');
+            },
+            hideQuiz: function() { document.getElementById('quiz-panel').classList.add('translate-y-full'); },
+            showShotSelector: function() { 
+                const container = document.getElementById('shot-options-container');
+                container.innerHTML = '';
+                container.className = gameData.matchType === 'buildup' ? "grid grid-cols-2 gap-2" : "grid grid-cols-3 gap-2";
+
+                if (gameData.matchType === 'buildup') {
+                    container.innerHTML = `
+                        <button onclick="gameLogic.selectShotStyle('header')" class="btn-modern p-3 rounded-xl flex flex-col items-center">
+                            <span class="text-2xl mb-1">🙆‍♂️</span>
+                            <span class="text-sm font-bold">Sundulan</span>
+                        </button>
+                        <button onclick="gameLogic.selectShotStyle('powerful')" class="btn-modern p-3 rounded-xl flex flex-col items-center !bg-red-700 !border-red-400">
+                            <span class="text-2xl mb-1">⚡</span>
+                            <span class="text-sm font-bold">Keras</span>
+                        </button>
+                        <button onclick="gameLogic.selectShotStyle('bicycle')" class="btn-modern p-3 rounded-xl flex flex-col items-center !bg-purple-700 !border-purple-400">
+                            <span class="text-2xl mb-1">🤸‍♂️</span>
+                            <span class="text-sm font-bold">Salto</span>
+                        </button>
+                        <button onclick="gameLogic.selectShotStyle('volley')" class="btn-modern p-3 rounded-xl flex flex-col items-center !bg-emerald-700 !border-emerald-400">
+                            <span class="text-2xl mb-1">🦵</span>
+                            <span class="text-sm font-bold">Voli</span>
+                        </button>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <button onclick="gameLogic.selectShotStyle('panenka')" class="btn-modern p-3 rounded-xl flex flex-col items-center">
+                            <span class="text-2xl mb-1">🧊</span>
+                            <span class="text-sm font-bold">Panenka</span>
+                        </button>
+                        <button onclick="gameLogic.selectShotStyle('power')" class="btn-modern p-3 rounded-xl flex flex-col items-center !bg-red-700 !border-red-400">
+                            <span class="text-2xl mb-1">⚡</span>
+                            <span class="text-sm font-bold">Keras</span>
+                        </button>
+                        <button onclick="gameLogic.selectShotStyle('curve')" class="btn-modern p-3 rounded-xl flex flex-col items-center !bg-emerald-700 !border-emerald-400">
+                            <span class="text-2xl mb-1">🌀</span>
+                            <span class="text-sm font-bold">Melengkung</span>
+                        </button>
+                    `;
+                }
+                document.getElementById('shot-style-panel').classList.remove('hidden'); 
+            },
+            hideShotSelector: function() { document.getElementById('shot-style-panel').classList.add('hidden'); },
+            
+            showCinematicGoal: function() {
+                const goalText = document.getElementById('cinematic-goal-text');
+                const flash = document.getElementById('cinematic-flash');
+                
+                goalText.classList.remove('hidden');
+                flash.classList.remove('hidden');
+                
+                gsap.fromTo(flash, {opacity: 0.8}, {opacity: 0, duration: 0.5, onComplete: () => flash.classList.add('hidden')});
+                
+                const tl = gsap.timeline();
+                tl.fromTo(goalText, 
+                    { scale: 0, opacity: 0, rotationX: 80, y: 50 }, 
+                    { scale: 1.2, opacity: 1, rotationX: 0, y: 0, duration: 0.6, ease: "back.out(1.5)" }
+                )
+                .to(goalText, { scale: 1, duration: 0.2 })
+                .to(goalText, { scale: 1.15, duration: 2.5, ease: "none" })
+                .to(goalText, { scale: 3, opacity: 0, duration: 0.4, ease: "power2.in", onComplete: () => {
+                    goalText.classList.add('hidden');
+                }});
+            },
+
+            showExpression: function(emoji) {
+                const expr = document.getElementById('player-expression');
+                expr.innerText = emoji;
+                gsap.fromTo(expr, {y: 50, scale: 0.5, opacity: 0}, {y: -50, scale: 1.5, opacity: 1, duration: 0.5, onComplete: () => { gsap.to(expr, {opacity: 0, delay: 1, duration: 0.5}); }});
+            },
+            showGameOver: function(message, scoreText, emoji) {
+                this.showScreen('screen-gameover');
+                document.getElementById('gameover-message').innerText = message;
+                document.getElementById('gameover-score').innerText = scoreText;
+                document.getElementById('gameover-emoji').innerText = emoji;
+            }
+        };
+
+        const gameLogic = {
+            startTurn: function(isFirstTurn = false) {
+                if(!isFirstTurn) scene3D.resetPositions();
+                uiManager.updateHUD();
+                const p = gameData.players[gameData.currentPlayerTurn];
+                
+                if(p.qIndex >= 5 && gameData.mode === 'solo') { this.endGame(); return; }
+                if(p.qIndex >= 5 && gameData.mode === 'duel' && gameData.players[1].qIndex >= 5 && gameData.players[2].qIndex >= 5) {
+                    this.endGame();
+                    return;
+                }
+
+                gameData.currentQuizObj = gameData.activeQuizSet[p.qIndex];
+                setTimeout(() => { uiManager.showQuiz(gameData.currentQuizObj, p.qIndex + 1); }, 1000);
+            },
+            handleAnswer: function(selectedIndex, correctIndex, buttonEl) {
+                document.querySelectorAll('.quiz-option').forEach(b => b.style.pointerEvents = 'none');
+                const isCorrect = (selectedIndex === correctIndex);
+                if (isCorrect) buttonEl.classList.add('correct');
+                else {
+                    buttonEl.classList.add('wrong');
+                    document.querySelectorAll('.quiz-option')[correctIndex].classList.add('correct');
+                }
+                setTimeout(() => {
+                    uiManager.hideQuiz();
+                    if (isCorrect) uiManager.showShotSelector();
+                    else scene3D.kickAnimation('catch', 'power');
+                }, 1000);
+            },
+            selectShotStyle: function(style) {
+                uiManager.hideShotSelector();
+                scene3D.kickAnimation('goal', style);
+            },
+            resolveTurn: function(isCorrect) {
+                const p = gameData.players[gameData.currentPlayerTurn];
+                p.qIndex++;
+                if (isCorrect) p.score += 10;
+                else p.lives -= 1;
+                uiManager.updateHUD();
+
+                if (p.lives <= 0) {
+                    this.endGame(`Player ${gameData.currentPlayerTurn} Kehabisan Nyawa!`);
+                    return;
+                }
+
+                if (gameData.mode === 'duel') {
+                    gameData.currentPlayerTurn = gameData.currentPlayerTurn === 1 ? 2 : 1;
+                }
+
+                this.startTurn();
+            },
+            endGame: function(reason = "Pertandingan Selesai!") {
+                const p1 = gameData.players[1];
+                const p2 = gameData.players[2];
+                let titleMsg = reason;
+                let emoji = "🏆";
+
+                if (gameData.mode === 'duel') {
+                    if (p1.score > p2.score) {
+                        titleMsg = "Player 1 Memenangkan Laga!";
+                        emoji = "🏆🔥";
+                    } else if (p2.score > p1.score) {
+                        titleMsg = "Player 2 Memenangkan Laga!";
+                        emoji = "🏆🔥";
+                    } else {
+                        titleMsg = "Laga Berakhir Imbang!";
+                        emoji = "🤝";
+                    }
+                } else {
+                    titleMsg = p1.score >= 40 ? "Juara Trofi Utama!" : "Pertandingan Usai!";
+                    emoji = p1.score >= 40 ? "🏆" : "⚽";
+                }
+
+                uiManager.showGameOver(titleMsg, `Skor P1: ${p1.score} | Skor P2: ${p2.score}`, emoji);
+            }
+        };
+
+        window.onload = () => {
+            gameData.resetGame();
+            uiManager.init();
+        };
+    </script>
+</body>
+</html>
